@@ -100,6 +100,9 @@ class ShoppingCartSpec extends ScalaTestWithActorTestKit(ShoppingCartSpec.config
       addItemAndAssertFail("iphone", 1)
       removeItemAndAssertFail("medved")
       checkOutAndAssertFail()
+
+      val summary3 = getCurrentState()
+      summary3 should === (ShoppingCart.Summary(Map("medved" -> 1, "krevedko" -> 1), checkedOut = true))
     }
 
     "add item fail with negative count" in {
@@ -127,6 +130,16 @@ class ShoppingCartSpec extends ScalaTestWithActorTestKit(ShoppingCartSpec.config
 
     "remove item that is not in cart" in {
       removeItemAndAssertFail("medved")
+    }
+
+    "checkout on empty cart" in {
+      val summary = getCurrentState()
+      summary should === (ShoppingCart.Summary(Map.empty, checkedOut = false))
+
+      checkOutAndAssertFail()
+
+      val summary2 = getCurrentState()
+      summary2 should === (ShoppingCart.Summary(Map.empty, checkedOut = false))
     }
   }
 }
