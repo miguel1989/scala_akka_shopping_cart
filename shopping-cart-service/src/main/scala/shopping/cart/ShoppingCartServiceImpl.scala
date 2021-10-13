@@ -27,8 +27,7 @@ class ShoppingCartServiceImpl(system: ActorSystem[_]) extends proto.ShoppingCart
       in.cartId)
 //    Future.successful(Cart(items = List(Item(in.itemId, in.quantity))))
     val entityRef = sharding.entityRefFor(ShoppingCart.EntityKey, in.cartId)
-    val reply: Future[ShoppingCart.Summary] =
-      entityRef.askWithStatus(ShoppingCart.AddItem(in.itemId, in.quantity, _))
+    val reply: Future[ShoppingCart.Summary] = entityRef.askWithStatus(ShoppingCart.AddItem(in.itemId, in.quantity, _))
     val response = reply.map(cart => toProtoCart(cart))
     convertError(response)
   }
