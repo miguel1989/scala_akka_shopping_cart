@@ -13,9 +13,7 @@ object ShoppingCart {
   /**
    * This interface defines all the commands (messages) that the ShoppingCart actor supports.
    */
-  sealed trait Command extends CborSerializable {
-    def replyTo: ActorRef[StatusReply[Summary]]
-  }
+  sealed trait Command extends CborSerializable //{def replyTo: ActorRef[StatusReply[Summary]]}
 
   /**
    * A command to add an item to the cart.
@@ -32,6 +30,8 @@ object ShoppingCart {
   final case class RemoveItem(itemId: String, replyTo: ActorRef[StatusReply[Summary]]) extends Command
 
   final case class Checkout(replyTo: ActorRef[StatusReply[Summary]]) extends Command
+
+  final case class Get(replyTo: ActorRef[Summary]) extends Command
 
   /**
    * Summary of the shopping cart state, used in reply messages.
@@ -53,7 +53,7 @@ object ShoppingCart {
 
     def isCheckedOut: Boolean = checkoutDate.isDefined
 
-    def checkout(now: Instant): State = copy(checkoutDate = Some(now)) //todo why copy?
+    def checkout(now: Instant): State = copy(checkoutDate = Some(now)) //TODO why copy?
 
     def toSummary: Summary = Summary(items, isCheckedOut)
 
@@ -83,22 +83,28 @@ object ShoppingCart {
   }
 
   private def handleCommandForCheckedOutShoppingCart(cartId: String, state: State, command: Command): ReplyEffect[Event, State] = {
-    Effect.reply(command.replyTo)(StatusReply.Error("Cant perform any action on checked out shopping cart"))
-//    command match {
-//      case cmd: AddItem => {
-//        Effect.reply(cmd.replyTo)(StatusReply.Error("Cant add, shopping cart is checked out"))
-//      }
-//      case cmd: RemoveItem => {
-//        Effect.reply(cmd.replyTo)(StatusReply.Error("Cant remove, shopping cart is checked out"))
-//      }
-//      case cmd: Checkout => {
-//        Effect.reply(cmd.replyTo)(StatusReply.Error("Cant checkout, shopping cart is checked out"))
-//      }
-//    }
+//    Effect.reply(command.replyTo)(StatusReply.Error("Cant perform any action on checked out shopping cart"))
+    command match {
+      case cmd: Get => {
+        Effect.reply(cmd.replyTo)(state.toSummary)
+      }
+      case cmd: AddItem => {
+        Effect.reply(cmd.replyTo)(StatusReply.Error("Cant add item, shopping cart is checked out"))
+      }
+      case cmd: RemoveItem => {
+        Effect.reply(cmd.replyTo)(StatusReply.Error("Cant remove item, shopping cart is checked out"))
+      }
+      case cmd: Checkout => {
+        Effect.reply(cmd.replyTo)(StatusReply.Error("Cant checkout, shopping cart is checked out"))
+      }
+    }
   }
 
   private def handleCommandForOpenShoppingCart(cartId: String, state: State, command: Command): ReplyEffect[Event, State] = {
     command match {
+      case Get(replyTo) =>
+        Effect.reply(replyTo)(state.toSummary)
+
       case AddItem(itemId, quantity, replyTo) => {
         if (state.hasItem(itemId)) {
           Effect.reply(replyTo)(StatusReply.Error(s"Item '$itemId' was already added to this shopping cart"))
