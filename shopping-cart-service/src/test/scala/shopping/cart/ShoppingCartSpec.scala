@@ -78,6 +78,20 @@ class ShoppingCartSpec extends ScalaTestWithActorTestKit(ShoppingCartSpec.config
     commandResult.reply.isError should === (true)
   }
 
+  def adjustItemQuantityAndAssertSuccess(itemId: String, count: Int): Unit = {
+    val commandResult = eventSourcedTestKit.runCommand(replyTo => ShoppingCart.AdjustItemQuantity(itemId, count, replyTo))
+    commandResult.reply.isSuccess should === (true)
+    commandResult.reply.getValue.checkedOut should === (false)
+    commandResult.reply.getValue.items.contains(itemId) should === (true)
+    commandResult.reply.getValue.items.get(itemId) should === (Some(count))
+    commandResult.event should === (ShoppingCart.ItemQuantityAdjusted(cartId, itemId, count))
+  }
+
+  def adjustItemQuantityAndAssertFail(itemId: String, count: Int): Unit = {
+    val commandResult = eventSourcedTestKit.runCommand(replyTo => ShoppingCart.AdjustItemQuantity(itemId, count, replyTo))
+    commandResult.reply.isError should === (true)
+  }
+
   "The Shopping Cart" should {
     "add item success" in {
       addItemAndAssertSuccess("medved", 1)
@@ -86,23 +100,29 @@ class ShoppingCartSpec extends ScalaTestWithActorTestKit(ShoppingCartSpec.config
       summary should === (ShoppingCart.Summary(Map("medved" -> 1), checkedOut = false))
     }
 
-    "add item and checkout" in {
+    "add item, adjust quantity and checkout" in {
       addItemAndAssertSuccess("medved", 1)
       addItemAndAssertSuccess("krevedko", 1)
 
+      adjustItemQuantityAndAssertFail("medved", -1)
+      adjustItemQuantityAndAssertFail("iphone", 2)
+      adjustItemQuantityAndAssertSuccess("medved", 3)
+
       val summary = getCurrentState()
-      summary should === (ShoppingCart.Summary(Map("medved" -> 1, "krevedko" -> 1), checkedOut = false))
+      summary should === (ShoppingCart.Summary(Map("medved" -> 3, "krevedko" -> 1), checkedOut = false))
 
       val summary2 = checkOutAndAssetSuccess()
-      summary2 should === (ShoppingCart.Summary(Map("medved" -> 1, "krevedko" -> 1), checkedOut = true))
+      summary2 should === (ShoppingCart.Summary(Map("medved" -> 3, "krevedko" -> 1), checkedOut = true))
 
-      //can not add/remove to checked out
+      //can not add/remove/adjust with checked out cart
       addItemAndAssertFail("iphone", 1)
       removeItemAndAssertFail("medved")
+      adjustItemQuantityAndAssertFail("medved", 2)
+      adjustItemQuantityAndAssertFail("iphone", 2)
       checkOutAndAssertFail()
 
       val summary3 = getCurrentState()
-      summary3 should === (ShoppingCart.Summary(Map("medved" -> 1, "krevedko" -> 1), checkedOut = true))
+      summary3 should === (ShoppingCart.Summary(Map("medved" -> 3, "krevedko" -> 1), checkedOut = true))
     }
 
     "add item fail with negative count" in {
@@ -130,6 +150,10 @@ class ShoppingCartSpec extends ScalaTestWithActorTestKit(ShoppingCartSpec.config
 
     "remove item that is not in cart" in {
       removeItemAndAssertFail("medved")
+    }
+
+    "adjust item quantity on empty cart" in {
+      adjustItemQuantityAndAssertFail("medved", 4)
     }
 
     "checkout on empty cart" in {

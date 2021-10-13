@@ -21,17 +21,15 @@ object ShoppingCart {
    * It replies with `StatusReply[Summary]`, which is sent back to the caller when
    * all the events emitted by this command are successfully persisted.
    */
-  final case class AddItem(
-                            itemId: String,
-                            quantity: Int,
-                            replyTo: ActorRef[StatusReply[Summary]])
-    extends Command
+  final case class AddItem(itemId: String, quantity: Int, replyTo: ActorRef[StatusReply[Summary]]) extends Command
 
   final case class RemoveItem(itemId: String, replyTo: ActorRef[StatusReply[Summary]]) extends Command
 
   final case class Checkout(replyTo: ActorRef[StatusReply[Summary]]) extends Command
 
   final case class Get(replyTo: ActorRef[Summary]) extends Command
+
+  final case class AdjustItemQuantity(itemId: String, quantity: Int, replyTo: ActorRef[StatusReply[Summary]]) extends Command
 
   /**
    * Summary of the shopping cart state, used in reply messages.
@@ -48,6 +46,7 @@ object ShoppingCart {
   final case class ItemAdded(cartId: String, itemId: String, quantity: Int) extends Event
   final case class ItemRemoved(cartId: String, itemId: String) extends Event
   final case class CheckedOut(cartId: String, eventTime: Instant) extends Event
+  final case class ItemQuantityAdjusted(cartId: String, itemId: String, quantity: Int) extends Event
 
   final case class State(items: Map[String, Int], checkoutDate: Option[Instant]) extends CborSerializable {
 
@@ -73,7 +72,6 @@ object ShoppingCart {
     val empty: State = State(items = Map.empty, checkoutDate = None)
   }
 
-
   private def handleCommand(cartId: String, state: State, command: Command): ReplyEffect[Event, State] = {
     if (state.isCheckedOut) {
       handleCommandForCheckedOutShoppingCart(cartId, state, command)
@@ -96,6 +94,9 @@ object ShoppingCart {
       }
       case cmd: Checkout => {
         Effect.reply(cmd.replyTo)(StatusReply.Error("Cant checkout, shopping cart is checked out"))
+      }
+      case cmd: AdjustItemQuantity => {
+        Effect.reply(cmd.replyTo)(StatusReply.Error("Cant adjust item quantity, shopping cart is checked out"))
       }
     }
   }
@@ -138,6 +139,20 @@ object ShoppingCart {
           }
         }
       }
+
+      case AdjustItemQuantity(itemId, quantity, replyTo) => {
+        if (!state.hasItem(itemId)) {
+          Effect.reply(replyTo)(StatusReply.Error(s"Item '$itemId' does not exist in the cart"))
+        } else if (quantity <= 0) {
+          Effect.reply(replyTo)(StatusReply.Error("Quantity must be greater than zero"))
+        } else {
+          Effect
+            .persist(ItemQuantityAdjusted(cartId, itemId, quantity))
+            .thenReply(replyTo) { updatedCartState =>
+              StatusReply.Success(updatedCartState.toSummary)
+            }
+        }
+      }
     }
   }
 
@@ -151,6 +166,9 @@ object ShoppingCart {
       }
       case CheckedOut(_, eventTime) => {
         state.checkout(eventTime)
+      }
+      case ItemQuantityAdjusted(_, itemId, quantity) => {
+        state.updateItem(itemId, quantity)
       }
     }
   }
