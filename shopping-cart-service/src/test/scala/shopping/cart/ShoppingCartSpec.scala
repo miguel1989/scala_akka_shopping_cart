@@ -1,14 +1,13 @@
 package shopping.cart
 
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
-import akka.pattern.StatusReply
 import akka.persistence.testkit.scaladsl.EventSourcedBehaviorTestKit
-import com.typesafe.config.ConfigFactory
+import com.typesafe.config.{Config, ConfigFactory}
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.wordspec.AnyWordSpecLike
 
 object ShoppingCartSpec {
-  val config = ConfigFactory
+  val config: Config = ConfigFactory
     .parseString("""
       akka.actor.serialization-bindings {
         "shopping.cart.CborSerializable" = jackson-cbor
@@ -31,34 +30,49 @@ class ShoppingCartSpec extends ScalaTestWithActorTestKit(ShoppingCartSpec.config
     eventSourcedTestKit.clear()
   }
 
+  def addItemAndAssertSuccess(itemId: String, count: Int): Unit = {
+    val commandResult = eventSourcedTestKit.runCommand(replyTo => ShoppingCart.AddItem(itemId, count, replyTo))
+    commandResult.reply.isSuccess should === (true)
+    commandResult.reply.getValue should === (ShoppingCart.Summary(Map(itemId -> count), checkedOut = false))
+    commandResult.event should === (ShoppingCart.ItemAdded(cartId, itemId, count))
+  }
+
+  def addItemAndAssertFail(itemId: String, count: Int): Unit = {
+    val commandResult = eventSourcedTestKit.runCommand(replyTo => ShoppingCart.AddItem(itemId, count, replyTo))
+    commandResult.reply.isError should === (true)
+//    println(commandResult)
+  }
+
+  def removeItemAndAssertSuccess(itemId: String): Unit = {
+//    val commandResult = eventSourcedTestKit.runCommand[StatusReply[ShoppingCart.Summary]](ShoppingCart.RemoveItem(itemId, _))
+    val commandResult = eventSourcedTestKit.runCommand(replyTo => ShoppingCart.RemoveItem(itemId, replyTo))
+    commandResult.reply.isSuccess should === (true)
+    commandResult.reply.getValue should === (ShoppingCart.Summary(Map.empty, checkedOut = false))
+    commandResult.event should === (ShoppingCart.ItemRemoved(cartId, itemId))
+  }
+
+  def removeItemAndAssertFail(itemId: String): Unit = {
+    val commandResult = eventSourcedTestKit.runCommand(replyTo => ShoppingCart.RemoveItem(itemId, replyTo))
+    commandResult.reply.isError should === (true)
+  }
+
   "The Shopping Cart" should {
-    "add item" in {
-      val commandResult = eventSourcedTestKit.runCommand(replyTo => ShoppingCart.AddItem("foo", 42, replyTo))
-      println(commandResult)
-      commandResult.reply should === (StatusReply.Success(ShoppingCart.Summary(Map("foo" -> 42), checkedOut = false)))
-      commandResult.event should === (ShoppingCart.ItemAdded(cartId, "foo", 42))
+    "add item success" in {
+      addItemAndAssertSuccess("medved", 1)
     }
 
     "reject already added item" in {
-      val result1 = eventSourcedTestKit.runCommand[StatusReply[ShoppingCart.Summary]](ShoppingCart.AddItem("foo", 42, _))
-      result1.reply.isSuccess should === (true)
-      val result2 = eventSourcedTestKit.runCommand[StatusReply[ShoppingCart.Summary]](ShoppingCart.AddItem("foo", 13, _))
-      result2.reply.isError should === (true)
-    }
-
-    "remove item that is not in cart" in {
-      val commandResult = eventSourcedTestKit.runCommand[StatusReply[ShoppingCart.Summary]](ShoppingCart.RemoveItem("foo", _))
-      commandResult.reply.isError should === (true)
-      println(commandResult)
+      addItemAndAssertSuccess("medved", 1)
+      addItemAndAssertFail("medved", 2)
     }
 
     "add and remove item success" in {
-      val result1 = eventSourcedTestKit.runCommand[StatusReply[ShoppingCart.Summary]](ShoppingCart.AddItem("foo", 42, _))
-      result1.reply.isSuccess should === (true)
+      addItemAndAssertSuccess("medved", 1)
+      removeItemAndAssertSuccess("medved")
+    }
 
-      val result2 = eventSourcedTestKit.runCommand[StatusReply[ShoppingCart.Summary]](ShoppingCart.RemoveItem("foo", _))
-      result2.reply.isSuccess should === (true)
-      result2.reply.getValue should === (ShoppingCart.Summary(Map.empty, checkedOut = false))
+    "remove item that is not in cart" in {
+      removeItemAndAssertFail("medved")
     }
   }
 }
