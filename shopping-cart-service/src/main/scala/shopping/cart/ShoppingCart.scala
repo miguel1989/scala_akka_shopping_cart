@@ -13,7 +13,9 @@ object ShoppingCart {
   /**
    * This interface defines all the commands (messages) that the ShoppingCart actor supports.
    */
-  sealed trait Command extends CborSerializable
+  sealed trait Command extends CborSerializable {
+    def replyTo: ActorRef[StatusReply[Summary]]
+  }
 
   /**
    * A command to add an item to the cart.
@@ -81,25 +83,25 @@ object ShoppingCart {
   }
 
   private def handleCommandForCheckedOutShoppingCart(cartId: String, state: State, command: Command): ReplyEffect[Event, State] = {
-    command match {
-      case cmd: AddItem => {
-        Effect.reply(cmd.replyTo)(StatusReply.Error("Cant add, shopping cart is checked out"))
-      }
-      case cmd: RemoveItem => {
-        Effect.reply(cmd.replyTo)(StatusReply.Error("Cant remove, shopping cart is checked out"))
-      }
-      case cmd: Checkout => {
-        Effect.reply(cmd.replyTo)(StatusReply.Error("Cant checkout, shopping cart is checked out"))
-      }
-    }
+    Effect.reply(command.replyTo)(StatusReply.Error("Cant perform any action on checked out shopping cart"))
+//    command match {
+//      case cmd: AddItem => {
+//        Effect.reply(cmd.replyTo)(StatusReply.Error("Cant add, shopping cart is checked out"))
+//      }
+//      case cmd: RemoveItem => {
+//        Effect.reply(cmd.replyTo)(StatusReply.Error("Cant remove, shopping cart is checked out"))
+//      }
+//      case cmd: Checkout => {
+//        Effect.reply(cmd.replyTo)(StatusReply.Error("Cant checkout, shopping cart is checked out"))
+//      }
+//    }
   }
 
   private def handleCommandForOpenShoppingCart(cartId: String, state: State, command: Command): ReplyEffect[Event, State] = {
     command match {
       case AddItem(itemId, quantity, replyTo) => {
         if (state.hasItem(itemId)) {
-          Effect.reply(replyTo)(
-            StatusReply.Error(s"Item '$itemId' was already added to this shopping cart"))
+          Effect.reply(replyTo)(StatusReply.Error(s"Item '$itemId' was already added to this shopping cart"))
         } else if (quantity <= 0) {
           Effect.reply(replyTo)(StatusReply.Error("Quantity must be greater than zero"))
         } else {
