@@ -23,7 +23,7 @@ class ShoppingCartSpec extends ScalaTestWithActorTestKit(ShoppingCartSpec.config
     EventSourcedBehaviorTestKit[
       ShoppingCart.Command,
       ShoppingCart.Event,
-      ShoppingCart.State](system, ShoppingCart(cartId))
+      ShoppingCart.State](system, ShoppingCart(cartId, "someTag"))
 
   override protected def beforeEach(): Unit = {
     super.beforeEach()
@@ -46,12 +46,12 @@ class ShoppingCartSpec extends ScalaTestWithActorTestKit(ShoppingCartSpec.config
 //    println(commandResult)
   }
 
-  def removeItemAndAssertSuccess(itemId: String): Unit = {
+  def removeItemAndAssertSuccess(itemId: String, expectedOldQuantity: Int): Unit = {
 //    val commandResult = eventSourcedTestKit.runCommand[StatusReply[ShoppingCart.Summary]](ShoppingCart.RemoveItem(itemId, _))
     val commandResult = eventSourcedTestKit.runCommand(replyTo => ShoppingCart.RemoveItem(itemId, replyTo))
     commandResult.reply.isSuccess should === (true)
     commandResult.reply.getValue should === (ShoppingCart.Summary(Map.empty, checkedOut = false))
-    commandResult.event should === (ShoppingCart.ItemRemoved(cartId, itemId))
+    commandResult.event should === (ShoppingCart.ItemRemoved(cartId, itemId, expectedOldQuantity))
   }
 
   def removeItemAndAssertFail(itemId: String): Unit = {
@@ -78,13 +78,13 @@ class ShoppingCartSpec extends ScalaTestWithActorTestKit(ShoppingCartSpec.config
     commandResult.reply.isError should === (true)
   }
 
-  def adjustItemQuantityAndAssertSuccess(itemId: String, count: Int): Unit = {
+  def adjustItemQuantityAndAssertSuccess(itemId: String, count: Int, expectedOldQuantity: Int): Unit = {
     val commandResult = eventSourcedTestKit.runCommand(replyTo => ShoppingCart.AdjustItemQuantity(itemId, count, replyTo))
     commandResult.reply.isSuccess should === (true)
     commandResult.reply.getValue.checkedOut should === (false)
     commandResult.reply.getValue.items.contains(itemId) should === (true)
     commandResult.reply.getValue.items.get(itemId) should === (Some(count))
-    commandResult.event should === (ShoppingCart.ItemQuantityAdjusted(cartId, itemId, count))
+    commandResult.event should === (ShoppingCart.ItemQuantityAdjusted(cartId, itemId, count, expectedOldQuantity))
   }
 
   def adjustItemQuantityAndAssertFail(itemId: String, count: Int): Unit = {
@@ -106,7 +106,7 @@ class ShoppingCartSpec extends ScalaTestWithActorTestKit(ShoppingCartSpec.config
 
       adjustItemQuantityAndAssertFail("medved", -1)
       adjustItemQuantityAndAssertFail("iphone", 2)
-      adjustItemQuantityAndAssertSuccess("medved", 3)
+      adjustItemQuantityAndAssertSuccess("medved", 3, 1)
 
       val summary = getCurrentState()
       summary should === (ShoppingCart.Summary(Map("medved" -> 3, "krevedko" -> 1), checkedOut = false))
@@ -142,7 +142,7 @@ class ShoppingCartSpec extends ScalaTestWithActorTestKit(ShoppingCartSpec.config
 
     "add and remove item success" in {
       addItemAndAssertSuccess("medved", 1)
-      removeItemAndAssertSuccess("medved")
+      removeItemAndAssertSuccess("medved", 1)
 
       val summary = getCurrentState()
       summary should === (ShoppingCart.Summary(Map.empty, checkedOut = false))

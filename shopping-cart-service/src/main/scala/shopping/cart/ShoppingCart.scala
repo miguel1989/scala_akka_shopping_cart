@@ -45,9 +45,9 @@ object ShoppingCart {
   }
 
   final case class ItemAdded(cartId: String, itemId: String, quantity: Int) extends Event
-  final case class ItemRemoved(cartId: String, itemId: String) extends Event
+  final case class ItemRemoved(cartId: String, itemId: String, oldQuantity: Int) extends Event
   final case class CheckedOut(cartId: String, eventTime: Instant) extends Event
-  final case class ItemQuantityAdjusted(cartId: String, itemId: String, quantity: Int) extends Event
+  final case class ItemQuantityAdjusted(cartId: String, itemId: String, quantity: Int, oldQuantity: Int) extends Event
 
   final case class State(items: Map[String, Int], checkoutDate: Option[Instant]) extends CborSerializable {
 
@@ -125,7 +125,7 @@ object ShoppingCart {
         if (!state.hasItem(itemId)) {
           Effect.reply(replyTo)(StatusReply.Error(s"Item '$itemId' is not in shopping cart"))
         } else {
-          Effect.persist(ItemRemoved(cartId, itemId)).thenReply(replyTo) { updatedCartState =>
+          Effect.persist(ItemRemoved(cartId, itemId, state.items(itemId))).thenReply(replyTo) { updatedCartState =>
             StatusReply.Success(updatedCartState.toSummary)
           }
         }
@@ -148,7 +148,7 @@ object ShoppingCart {
           Effect.reply(replyTo)(StatusReply.Error("Quantity must be greater than zero"))
         } else {
           Effect
-            .persist(ItemQuantityAdjusted(cartId, itemId, quantity))
+            .persist(ItemQuantityAdjusted(cartId, itemId, quantity, state.items(itemId)))
             .thenReply(replyTo) { updatedCartState =>
               StatusReply.Success(updatedCartState.toSummary)
             }
@@ -162,13 +162,13 @@ object ShoppingCart {
       case ItemAdded(_, itemId, quantity) => {
         state.updateItem(itemId, quantity)
       }
-      case ItemRemoved(_, itemId) => {
+      case ItemRemoved(_, itemId, _) => {
         state.updateItem(itemId, 0)
       }
       case CheckedOut(_, eventTime) => {
         state.checkout(eventTime)
       }
-      case ItemQuantityAdjusted(_, itemId, quantity) => {
+      case ItemQuantityAdjusted(_, itemId, quantity, _) => {
         state.updateItem(itemId, quantity)
       }
     }
