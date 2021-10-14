@@ -22,7 +22,14 @@ class ItemPopularityProjectionHandler(
         repo.update(session, itemId, quantity)
         logItemCount(session, itemId)
       }
-      //TODO add more events
+      case ShoppingCart.ItemRemoved(_, itemId, oldQuantity)=> {
+        repo.update(session, itemId, -oldQuantity)
+        logItemCount(session, itemId)
+      }
+      case ShoppingCart.ItemQuantityAdjusted(_, itemId, quantity, oldQuantity) => {
+        repo.update(session, itemId, quantity - oldQuantity)
+        logItemCount(session, itemId)
+      }
       case _: ShoppingCart.CheckedOut =>
     }
   }
