@@ -2,6 +2,7 @@ package com.example
 
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors}
 import akka.actor.typed.{ActorRef, Behavior, PostStop, Signal}
+import com.example.DeviceGroup.DeviceTerminated
 import com.example.DeviceManager.DeviceRegistered
 
 object DeviceGroup {
@@ -57,6 +58,7 @@ class DeviceGroup(context: ActorContext[DeviceGroup.Command], groupId: String)
       case None =>
         context.log.info("Creating device actor for {}", deviceId)
         val deviceActor = context.spawn(Device(groupId, deviceId), s"device-$deviceId")
+        context.watchWith(deviceActor, DeviceTerminated(deviceActor, groupId, deviceId))
         deviceIdToActor += (deviceId -> deviceActor)
         replyTo ! DeviceManager.DeviceRegistered(deviceActor)
     }
