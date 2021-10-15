@@ -4,7 +4,7 @@ import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 import org.scalatest.wordspec.AnyWordSpecLike
 
-class DeviceGroupSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike{
+class DeviceGroupSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
 
   "DeviceGroup actor" must {
     "be able to register a device actor" in {
