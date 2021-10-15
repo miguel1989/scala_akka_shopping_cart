@@ -1,6 +1,7 @@
 package com.example
 
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
+import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 import org.scalatest.wordspec.AnyWordSpecLike
 
 class DeviceGroupSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike{
@@ -33,6 +34,14 @@ class DeviceGroupSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike{
 
       deviceActor1 ! Device.ReadTemperature(43, respondTempProbe.ref)
       respondTempProbe.expectMessage(Device.RespondTemperature(43, Some(37.1)))
+    }
+
+    "ignore requests for otherGroup" in {
+      val deviceRegisteredProbe = createTestProbe[DeviceManager.DeviceRegistered]()
+      val deviceGroupActor = spawn(DeviceGroup("myGroup"))
+
+      deviceGroupActor ! DeviceManager.RequestTrackDevice("myGroup2", "device1", deviceRegisteredProbe.ref)
+      deviceRegisteredProbe.expectNoMessage(500.milliseconds)
     }
   }
 }
