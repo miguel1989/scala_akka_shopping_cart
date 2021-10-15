@@ -13,6 +13,12 @@ object DeviceManager {
     extends DeviceManager.Command with DeviceGroup.Command
 
   final case class DeviceRegistered(device: ActorRef[Device.Command])
+
+  final case class RequestDeviceList(requestId: Long, groupId: String, replyTo: ActorRef[ReplyDeviceList])
+    extends DeviceManager.Command
+      with DeviceGroup.Command
+
+  final case class ReplyDeviceList(requestId: Long, ids: Set[String])
 }
 
 class DeviceManager(context: ActorContext[DeviceManager.Command], groupId: String)
