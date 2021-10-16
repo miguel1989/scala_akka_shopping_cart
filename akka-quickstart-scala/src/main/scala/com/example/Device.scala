@@ -11,7 +11,7 @@ object Device {
 
   final case class ReadTemperature(requestId: Long, replyTo: ActorRef[RespondTemperature]) extends Command
 
-  final case class RespondTemperature(requestId: Long, value: Option[Double])
+  final case class RespondTemperature(requestId: Long, deviceId: String, value: Option[Double])
 
   final case class RecordTemperature(requestId: Long, value: Double, replyTo: ActorRef[TemperatureRecorded]) extends Command
 
@@ -37,7 +37,7 @@ class Device(context: ActorContext[Device.Command], groupId: String, deviceId: S
         this
 
       case ReadTemperature(id, replyTo) =>
-        replyTo ! RespondTemperature(id, lastTemperatureReading)
+        replyTo ! RespondTemperature(id, deviceId, lastTemperatureReading)
         this
 
       case Passivate =>
