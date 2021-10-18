@@ -33,7 +33,7 @@ class DeviceGroupSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
       tempRecordedProbe.expectMessage(Device.TemperatureRecorded(requestId = 42))
 
       deviceActor1 ! Device.ReadTemperature(43, respondTempProbe.ref)
-      respondTempProbe.expectMessage(Device.RespondTemperature(43, Some(37.1)))
+      respondTempProbe.expectMessage(Device.RespondTemperature(43, "device1", Some(37.1)))
     }
 
     "ignore requests for otherGroup" in {

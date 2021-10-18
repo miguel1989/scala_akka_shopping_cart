@@ -3,6 +3,7 @@ package com.example
 import akka.actor.typed.{ActorRef, Behavior}
 import akka.actor.typed.scaladsl.{AbstractBehavior, ActorContext, Behaviors, TimerScheduler}
 import com.example.DeviceGroupQuery.{CollectionTimeout, DeviceTerminated, WrappedRespondTemperature}
+import com.example.DeviceManager.{DeviceNotAvailable, DeviceTimedOut, RespondAllTemperatures, Temperature, TemperatureNotAvailable, TemperatureReading}
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -19,7 +20,6 @@ object DeviceGroupQuery {
       }
     }
   }
-
   trait Command
 
   private case object CollectionTimeout extends Command
@@ -40,6 +40,9 @@ class DeviceGroupQuery(
 
   context.log.info("DeviceGroupQuery({}) started with timeout {}", requestId, timeout)
 
+  var stillWaiting: Set[String] = deviceIdToActor.keySet
+  var deviceTempMap: Map[String, TemperatureReading] = Map.empty
+
   timers.startSingleTimer(CollectionTimeout, CollectionTimeout, timeout)
 
   private val respondTemperatureAdapter: ActorRef[Device.RespondTemperature] =
@@ -51,5 +54,41 @@ class DeviceGroupQuery(
       device ! Device.ReadTemperature(0, respondTemperatureAdapter) //instead of context.self
   }
 
-  override def onMessage(msg: DeviceGroupQuery.Command): Behavior[DeviceGroupQuery.Command] = ???
+  override def onMessage(msg: DeviceGroupQuery.Command): Behavior[DeviceGroupQuery.Command] = {
+    msg match {
+      case WrappedRespondTemperature(response) =>
+        val temperatureReading = response.value match {
+          case Some(value) => Temperature(value)
+          case None => TemperatureNotAvailable
+        }
+
+        deviceTempMap += (response.deviceId -> temperatureReading)
+        stillWaiting -= response.deviceId
+
+        respondWhenAllCollected()
+
+      case DeviceTerminated(deviceId) =>
+        if (stillWaiting(deviceId)) {
+          deviceTempMap += (deviceId -> DeviceNotAvailable)
+          stillWaiting -= deviceId
+        }
+
+        respondWhenAllCollected()
+
+      case CollectionTimeout =>
+        deviceTempMap ++= stillWaiting.map(deviceId => (deviceId -> DeviceTimedOut))
+        stillWaiting = Set.empty
+
+        respondWhenAllCollected()
+    }
+
+  }
+
+  private def respondWhenAllCollected(): Behavior[DeviceGroupQuery.Command] = {
+    if (stillWaiting.isEmpty) {
+      requester ! RespondAllTemperatures(requestId, deviceTempMap)
+      return Behaviors.stopped
+    }
+    this
+  }
 }
