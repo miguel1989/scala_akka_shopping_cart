@@ -1,6 +1,7 @@
 package com.example
 
 import akka.actor.testkit.typed.scaladsl.ScalaTestWithActorTestKit
+import com.example.DeviceManager.{RequestAllTemperatures, RespondAllTemperatures, Temperature, TemperatureNotAvailable}
 import org.scalatest.time.SpanSugar.convertIntToGrainOfTime
 import org.scalatest.wordspec.AnyWordSpecLike
 
@@ -34,14 +35,38 @@ class DeviceGroupSpec extends ScalaTestWithActorTestKit with AnyWordSpecLike {
 
       deviceActor1 ! Device.ReadTemperature(43, respondTempProbe.ref)
       respondTempProbe.expectMessage(Device.RespondTemperature(43, "device1", Some(37.1)))
+
+      val allTempProbe = createTestProbe[RespondAllTemperatures]()
+      deviceGroupActor ! RequestAllTemperatures(0, "myGroup", allTempProbe.ref)
+      allTempProbe.expectMessage(
+        RespondAllTemperatures(
+          requestId = 0,
+          temperatures =
+            Map("device1" -> Temperature(37.1), "device2" -> TemperatureNotAvailable)))
     }
 
-    "ignore requests for otherGroup" in {
+    "ignore track requests for otherGroup" in {
       val deviceRegisteredProbe = createTestProbe[DeviceManager.DeviceRegistered]()
       val deviceGroupActor = spawn(DeviceGroup("myGroup"))
 
       deviceGroupActor ! DeviceManager.RequestTrackDevice("myGroup2", "device1", deviceRegisteredProbe.ref)
       deviceRegisteredProbe.expectNoMessage(500.milliseconds)
+    }
+
+    "ignore request device list for otherGroup" in {
+      val replyProbe = createTestProbe[DeviceManager.ReplyDeviceList]()
+      val deviceGroupActor = spawn(DeviceGroup("myGroup"))
+
+      deviceGroupActor ! DeviceManager.RequestDeviceList(1, "wrong", replyProbe.ref)
+      replyProbe.expectNoMessage(500.milliseconds)
+    }
+
+    "ignore request all temperatures for otherGroup" in {
+      val replyProbe = createTestProbe[DeviceManager.RespondAllTemperatures]()
+      val deviceGroupActor = spawn(DeviceGroup("myGroup"))
+
+      deviceGroupActor ! DeviceManager.RequestAllTemperatures(1, "wrong", replyProbe.ref)
+      replyProbe.expectNoMessage(500.milliseconds)
     }
 
     "be able to list active devices and shut down 1 device" in {

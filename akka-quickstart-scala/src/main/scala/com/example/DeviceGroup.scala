@@ -5,6 +5,8 @@ import akka.actor.typed.{ActorRef, Behavior, PostStop, Signal}
 import com.example.DeviceGroup.DeviceTerminated
 import com.example.DeviceManager.DeviceRegistered
 
+import scala.concurrent.duration.DurationInt
+
 object DeviceGroup {
   def apply(groupId: String): Behavior[Command] =
     Behaviors.setup(context => new DeviceGroup(context, groupId))
@@ -46,6 +48,13 @@ class DeviceGroup(context: ActorContext[DeviceGroup.Command], groupId: String)
           return Behaviors.unhandled
         }
         replyTo ! DeviceManager.ReplyDeviceList(requestId, deviceIdToActor.keySet)
+        this
+      case DeviceManager.RequestAllTemperatures(requestId, groupIdParam, replyTo) =>
+        if (groupId != groupIdParam) {
+          context.log.warn("Ignoring RequestAllTemperatures request for {}. This actor is responsible for {}.", groupIdParam, groupId)
+          return Behaviors.unhandled
+        }
+        context.spawnAnonymous(DeviceGroupQuery(deviceIdToActor, requestId, requester = replyTo, 3.seconds))
         this
     }
   }
