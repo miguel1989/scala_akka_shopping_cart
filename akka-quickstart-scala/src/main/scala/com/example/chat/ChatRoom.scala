@@ -54,7 +54,7 @@ object ChatRoom {
                        room: ActorRef[PublishSessionMessage],
                        screenName: String,
                        client: ActorRef[SessionEvent]): Behavior[SessionCommand] =
-    Behaviors.receiveMessage {
+    Behaviors.receiveMessage { //todo in example was Behaviors.setup
       case PostMessage(message) =>
         // from client, publish to others via the room
         room ! PublishSessionMessage(screenName, message)
