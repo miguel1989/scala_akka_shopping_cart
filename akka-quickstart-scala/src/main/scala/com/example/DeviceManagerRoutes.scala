@@ -10,6 +10,8 @@ import de.heikoseeberger.akkahttpcirce.FailFastCirceSupport
 import java.time.Duration
 import scala.concurrent.Future
 
+final case class DeviceRequest(name: String)
+
 class DeviceManagerRoutes(deviceManager: ActorRef[DeviceManager.Command])(implicit val system: ActorSystem[_]) extends FailFastCirceSupport {
 
   import io.circe.generic.auto._ //implicit encoders and decoders
@@ -19,6 +21,10 @@ class DeviceManagerRoutes(deviceManager: ActorRef[DeviceManager.Command])(implic
 
   def getDeviceList(groupName: String): Future[DeviceManager.ReplyDeviceList] = {
     deviceManager.ask(DeviceManager.RequestDeviceList(1, groupName, _))
+  }
+
+  def registerDevice(groupName: String, deviceName: String): Future[DeviceManager.DeviceRegistered] = {
+    deviceManager.ask(DeviceManager.RequestTrackDevice(groupName, deviceName, _))
   }
 
   val topLevelRoute: Route = pathPrefix("api")(
@@ -48,10 +54,14 @@ class DeviceManagerRoutes(deviceManager: ActorRef[DeviceManager.Command])(implic
         complete(getDeviceList(groupName))
       }
     },
-//    path(Segment / "device") { groupName =>
-//      post {
-//
-//      }
-//    }
+    path(Segment / "device") { groupName =>
+      post {
+        entity(as[DeviceRequest]) { deviceRequest =>
+          onSuccess(registerDevice(groupName, deviceRequest.name)) { response =>
+            complete("device " + deviceRequest.name + " is registered")
+          }
+        }
+      }
+    }
   )
 }
