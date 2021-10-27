@@ -42,7 +42,11 @@ object Advanced extends App {
     67
   } //monads
 
-  println(aFuture.value)
+  aFuture onComplete {
+    case Success(value) => println(value)
+    case Failure(ex) => println("Error " + ex.getMessage)
+  }
+//  println(aFuture.value)
 
 
   //--------------------------------------------------------------------------------------------
