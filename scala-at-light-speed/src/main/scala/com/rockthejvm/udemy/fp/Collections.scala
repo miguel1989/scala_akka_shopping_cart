@@ -5,8 +5,8 @@ import scala.util.Random
 object Collections extends App {
 
   //Sequences
-  val seq = Seq(1,2,3)
-  val seq2 =  seq ++ Seq(4,5,6)
+  val seq = Seq(1, 2, 3)
+  val seq2 = seq ++ Seq(4, 5, 6)
 
   println(seq)
   println(seq.reverse)
@@ -17,22 +17,23 @@ object Collections extends App {
   range.foreach(println)
 
   //Lists
-  val list = List(1,2,3)
+  val list = List(1, 2, 3)
   val prepended = 43 +: list :+ 89
-  println(list ++ List(4,5,6))
+  println(list ++ List(4, 5, 6))
   println(list.mkString("--"))
 
   //Arrays
-  val numbers = Array(1,2,3)
+  val numbers = Array(1, 2, 3)
   val threeElems = Array.ofDim[Int](3)
   println(threeElems)
   threeElems.foreach(println)
 
   //Vectors
-  val vector = Vector(1,2,3)
+  val vector = Vector(1, 2, 3)
 
   val maxRuns = 1000
   val maxCapacity = 1000000
+
   def getWriteTime(col: Seq[Int]): Double = {
     val r = new Random
     val times = for {
@@ -46,10 +47,10 @@ object Collections extends App {
     times.sum * 1.0 / maxRuns
   }
 
-  val numberList = (1 to maxCapacity ).toList
-  val numberVector = (1 to maxCapacity ).toVector
-//  println(getWriteTime(numberList))
-//  println(getWriteTime(numberVector))
+  val numberList = (1 to maxCapacity).toList
+  val numberVector = (1 to maxCapacity).toVector
+  //  println(getWriteTime(numberList))
+  //  println(getWriteTime(numberVector))
 
 
   //Tuple
@@ -60,7 +61,7 @@ object Collections extends App {
   println(aTuple.swap)
 
   //Maps
-  val aMap:Map[String, Int] = Map(("abc", 1), "fff" -> 2).withDefaultValue(-1)
+  val aMap: Map[String, Int] = Map(("abc", 1), "fff" -> 2).withDefaultValue(-1)
 
   println(aMap.map(pair => pair._1.toUpperCase))
   println(aMap.view.filterKeys(k => k.startsWith("a")))
@@ -69,13 +70,36 @@ object Collections extends App {
   println(names.groupBy(it => it.charAt(0)))
 
 
+  val config: Map[String, String] = Map(
+    "host" -> "ip",
+    "port" -> "8090"
+  )
+
+  class Connection {
+    def connect = "connected"
+  }
+
+  object Connection {
+    val random = new Random(System.nanoTime())
+
+    def apply(host: String, port: String): Option[Connection] = {
+      if (random.nextBoolean()) Some(new Connection)
+      else None
+    }
+  }
+
+  config.get("host").flatMap(h => config.get("port").flatMap(p => Connection(h,p)))
+  Connection("1", "2") match {
+    case Some(c) => println(c.connect)
+    case None => println("fail")
+  }
 
   //-----------------------------------------------------------------
   class Network() {
     var network: Map[String, Set[String]] = Map()
 
     def add(name: String): Unit = {
-      network += name -> Seq()
+      network + name -> Seq()
     }
 
     def remove(name: String): Unit = {

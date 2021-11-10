@@ -1,5 +1,7 @@
 package com.rockthejvm
 
+import scala.annotation.tailrec
+
 object PatternMatching extends App {
   //switch expression
 
@@ -10,10 +12,12 @@ object PatternMatching extends App {
     case _ => "something else"
   }
 
-  case class Person(name:String, age:Int)
+  case class Person(name: String, age: Int)
+
   val bob = Person("bob", 42)
   val personGreeting = bob match {
-    case Person(n,a) => s"Hi my name is $n and i am $a old"
+    case Person(n, a) if a < 20 => s"Hi my name is $n and i am $a young"
+    case Person(n, a) => s"Hi my name is $n and i am $a old"
     case _ => "something else"
   }
 
@@ -22,8 +26,37 @@ object PatternMatching extends App {
     case (band, genre, name, age) => ""
   }
 
-  val list = List(1,2,3)
+  val list = List(1, 2, 3)
   list match {
     case List(_, 2, _) => "aaaa"
   }
+
+  trait Expr
+  case class Number(n: Int) extends Expr
+  case class Sum(e1: Expr, e2: Expr) extends Expr
+  case class Prod(e1: Expr, e2: Expr) extends Expr
+
+  //Sum(Number(3),Number(3)) => 2 + 3
+  def displayInParentheses(expr: Expr): String = {
+    expr match {
+      case Sum(_,_) => s"(${display(expr)})"
+      case _ => display(expr)
+    }
+  }
+  def display(expr: Expr): String = {
+    expr match {
+      case Number(n) => "" + n
+      case Sum(e1, e2) => display(e1) + " + " + display(e2)
+      case Prod(e1, e2) =>
+        displayInParentheses(e1) + " * " + displayInParentheses(e2)
+    }
+  }
+
+  println(display(Number(3)))
+  println(display(Sum(Number(2), Number(3))))
+  println(display(Sum(Sum(Number(2), Number(3)), Number(4))))
+  println(display(Prod(Sum(Number(2), Number(3)), Number(4))))
+  println(display(Prod(Number(4), Sum(Number(2), Number(3)))))
+  println(display(Prod(Number(5), Number(4))))
+  println(display(Sum(Prod(Number(5), Number(4)), Number(7))))
 }
