@@ -24,11 +24,30 @@ object PatternMatching extends App {
   val tuple = ("Bon Jovi", "rock", "sssss", 123)
   val bandDescripotion = tuple match {
     case (band, genre, name, age) => ""
+    case (band, genre, name, 123) => ""
+    case (band, genre, _, 123) => ""
+    case something => ""
   }
 
   val list = List(1, 2, 3)
   list match {
     case List(_, 2, _) => "aaaa"
+    case List(1, _*) => "aaaa"
+  }
+
+  val head :: tail = list
+  println("head")
+  println(head)
+  println(tail)
+
+  val nameBindingMatch = list match {
+    case notEmptyList @ List(_, _) => ""
+//    case List(_, something @ List(_)) => ""
+//    case List(_, something @ List(_)) if something > 2 => ""
+  }
+
+  val multiPatternBindingMath = list match {
+    case Nil | List(_) => "aaa"
   }
 
   trait Expr
