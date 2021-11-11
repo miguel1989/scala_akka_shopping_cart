@@ -102,5 +102,20 @@ object testStream extends App {
   val startFrom0 = 0 #:: naturals
 
   println(naturals.takeAsList(100))
-  naturals.map(_ * 2).take(10).foreach(println)
+//  naturals.map(_ * 2).take(10).foreach(println)
+
+  def fibo(val1: Int = 1, val2: Int = 1) : MyStream[Int] = {
+    println(s"val1 = $val1 val2 = $val2")
+    new NonEmptyStream(val1, fibo(val2, val1 + val2))
+  }
+
+  val fiboStream = fibo()
+  println(fiboStream.takeAsList(10))
+
+  def erotosthenes(numbers: MyStream[Int]): MyStream[Int] = {
+    if (numbers.isEmpty) numbers
+    else new NonEmptyStream[Int](numbers.head, erotosthenes(numbers.tail.filter(_ % numbers.head != 0)))
+  }
+
+  println(erotosthenes(MyStream.from(2)(_ + 1)).takeAsList(100))
 }
