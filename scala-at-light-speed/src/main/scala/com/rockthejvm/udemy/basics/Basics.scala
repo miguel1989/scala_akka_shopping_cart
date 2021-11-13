@@ -1,7 +1,7 @@
-package com.rockthejvm
+package com.rockthejvm.udemy.basics
 
 object Basics extends App {
-  val m:Int = 42
+  val m: Int = 42
   val b = false
   val str: String = "Medved"
   val interpolated: String = s"the str is $str"
@@ -10,19 +10,19 @@ object Basics extends App {
 
   val aCodeBlock = {
     val aLocal = 67
-    var b:Int = 1
+    var b: Int = 1
 
     aLocal + 2 + b
   }
 
-  def myFync(x: Int, y:String): String = {
+  def myFync(x: Int, y: String): String = {
     y + " " + x
   }
 
-  def factorial(n:Int):Int = {
+  def factorial(n: Int): Int = {
     if (n <= 1) {
       return 1
     }
-    n * factorial(n -1)
+    n * factorial(n - 1)
   }
 }

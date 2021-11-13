@@ -1,4 +1,4 @@
-package com.rockthejvm
+package com.rockthejvm.udemy.basics
 
 import scala.collection.immutable.LazyList.cons
 
@@ -24,7 +24,7 @@ object Playground extends App {
     .foldLeft(Map.empty[String, Int])((acc, word) => {
       val newCount = acc.getOrElse(word, 0) + 1
       acc + (word -> newCount)
-  })
+    })
   println(map)
 
   val xValues = 1 to 4
@@ -36,9 +36,8 @@ object Playground extends App {
   println(coordinates(20))
 
 
-
-
   def makeLazyList(v: Int): LazyList[Int] = cons(v, makeLazyList(v + 1))
+
   val a = makeLazyList(3)
   println(a)
   println(((a drop 66) take 3).toList)
@@ -62,7 +61,7 @@ object Playground extends App {
   val zeroPartial: PartialFunction[Int, String] = {
     case x: Int if x == 0 => "Zero"
   }
-  val groupByResult:Map[String, List[Int]] = list groupBy {
+  val groupByResult: Map[String, List[Int]] = list groupBy {
     oddAndSmallPartial orElse
       evenAndSmallPartial orElse
       negativePartial orElse
@@ -71,8 +70,9 @@ object Playground extends App {
   }
   println(groupByResult)
 
-  def doSomething(x: Int, str: String) :String = {
+  def doSomething(x: Int, str: String): String = {
     s"$x - $str"
   }
+
   println(doSomething(1, "a"))
 }

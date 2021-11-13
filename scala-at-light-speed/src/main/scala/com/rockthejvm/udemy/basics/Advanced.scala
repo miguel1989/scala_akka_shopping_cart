@@ -1,8 +1,7 @@
-package com.rockthejvm
+package com.rockthejvm.udemy.basics
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
-import scala.concurrent.ExecutionContext.Implicits.global
 
 object Advanced extends App {
   lazy val aLazyVal = 2
@@ -15,7 +14,8 @@ object Advanced extends App {
 
   //pseudo collections
   //Option / Try
-  def methodWithNull() : String = "hello"
+  def methodWithNull(): String = "hello"
+
   val anOption = Option(methodWithNull()) // Some("hello") or None
   val strProc = anOption match {
     case Some(str) => s"hi $str"
@@ -23,6 +23,7 @@ object Advanced extends App {
   }
 
   def methodThatCanTrow() = throw new RuntimeException
+
   val aTry = Try(methodThatCanTrow())
   val result = aTry match {
     case Success(value) => "cool"
@@ -35,7 +36,7 @@ object Advanced extends App {
   //--------------------------------------------------------------------------------------------
   //Evaulate something on another thread
   //async programming
-  val aFuture = Future{
+  val aFuture = Future {
     println("loading ...")
     Thread.sleep(1000)
     println("complete")
@@ -46,19 +47,20 @@ object Advanced extends App {
     case Success(value) => println(value)
     case Failure(ex) => println("Error " + ex.getMessage)
   }
-//  println(aFuture.value)
+  //  println(aFuture.value)
 
 
   //--------------------------------------------------------------------------------------------
   //#1 implicit arguments
-  def aMethod(implicit arg:Int) = arg + 1
+  def aMethod(implicit arg: Int) = arg + 1
+
   implicit val myImplVal = 42
   println(aMethod) //aMethod(myImplVal)
 
   //#2 implicit conversions
-  implicit class RichInt(n:Int) {
+  implicit class RichInt(n: Int) {
     def isEven() = n % 2
   }
+
   println(23.isEven())
 }
-

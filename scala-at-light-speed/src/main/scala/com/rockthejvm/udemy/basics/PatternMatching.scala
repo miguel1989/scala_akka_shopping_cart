@@ -1,6 +1,4 @@
-package com.rockthejvm
-
-import scala.annotation.tailrec
+package com.rockthejvm.udemy.basics
 
 object PatternMatching extends App {
   //switch expression
@@ -41,9 +39,9 @@ object PatternMatching extends App {
   println(tail)
 
   val nameBindingMatch = list match {
-    case notEmptyList @ List(_, _) => ""
-//    case List(_, something @ List(_)) => ""
-//    case List(_, something @ List(_)) if something > 2 => ""
+    case notEmptyList@List(_, _) => ""
+    //    case List(_, something @ List(_)) => ""
+    //    case List(_, something @ List(_)) if something > 2 => ""
   }
 
   val multiPatternBindingMath = list match {
@@ -51,17 +49,21 @@ object PatternMatching extends App {
   }
 
   trait Expr
+
   case class Number(n: Int) extends Expr
+
   case class Sum(e1: Expr, e2: Expr) extends Expr
+
   case class Prod(e1: Expr, e2: Expr) extends Expr
 
   //Sum(Number(3),Number(3)) => 2 + 3
   def displayInParentheses(expr: Expr): String = {
     expr match {
-      case Sum(_,_) => s"(${display(expr)})"
+      case Sum(_, _) => s"(${display(expr)})"
       case _ => display(expr)
     }
   }
+
   def display(expr: Expr): String = {
     expr match {
       case Number(n) => "" + n

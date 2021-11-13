@@ -1,13 +1,13 @@
-package com.rockthejvm
-import io.circe._
-import io.circe.generic.auto._
-import  io.circe.parser._
-import io.circe.syntax._
+package com.rockthejvm.udemy.basics
+
+import io.circe.parser.{decode, parse}
+import io.circe.{Decoder, Encoder, Error}
 
 object CirceJson extends App {
 
   //Option[String]
-  case class Person(name:String, age:Int)
+  case class Person(name: String, age: Int)
+
   val person = Person("Miguel", 32)
 
   val jsonStr = Encoder[Person].apply(person).spaces2SortKeys
