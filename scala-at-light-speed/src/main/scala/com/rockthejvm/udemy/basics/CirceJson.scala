@@ -1,5 +1,8 @@
 package com.rockthejvm.udemy.basics
 
+import io.circe._
+import io.circe.generic.auto._
+import io.circe.parser._
 import io.circe.parser.{decode, parse}
 import io.circe.{Decoder, Encoder, Error}
 
@@ -14,7 +17,7 @@ object CirceJson extends App {
 
   println("-" * 100)
   println(jsonStr)
-  println(person.asJson) //circe.syntax
+//  println(person.asJson) //circe.syntax
 
   val str = {
     """
