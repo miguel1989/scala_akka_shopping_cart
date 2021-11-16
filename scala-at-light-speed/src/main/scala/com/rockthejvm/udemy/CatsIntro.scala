@@ -1,5 +1,7 @@
 package com.rockthejvm.udemy
 
+import cats.effect.IO
+
 object CatsIntro extends App {
 
   import cats.Eq
@@ -72,4 +74,21 @@ object CatsIntro extends App {
   }
 
   println(productWithApplicatives(List(1,2,3), List('a', 'b')))
+
+
+  def fib(n: Int, a: Long = 0, b: Long = 1): IO[Long] =
+    IO(a + b).flatMap { b2 =>
+      if (n > 0)
+        fib(n - 1, b, b2)
+      else
+        IO.pure(a)
+    }
+
+  def putStrLn(value: String) = IO(println(value))
+  val readLn = IO(scala.io.StdIn.readLine())
+  for {
+    _ <- putStrLn("What's your name?")
+    n <- readLn
+    _ <- putStrLn(s"Hello, $n!")
+  } yield ()
 }
