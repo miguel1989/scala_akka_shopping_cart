@@ -1,7 +1,5 @@
 package com.rockthejvm.udemy.advanced.part4
 
-import org.w3c.dom.html.HTMLScriptElement
-
 object TypeClasses extends App {
   trait HTMLWritable {
     def toHtml: String

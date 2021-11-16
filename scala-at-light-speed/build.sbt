@@ -5,8 +5,9 @@ version := "0.1"
 scalaVersion := "2.13.1"
 
 val circeVersion = "0.14.1"
-
 val akkaVersion = "2.6.17"
+val catsVersion = "2.6.1"
+val effectsVersion = "3.2.8"
 
 libraryDependencies ++= Seq(
   "io.circe" %% "circe-core",
@@ -18,5 +19,7 @@ libraryDependencies ++= Seq(
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor" % akkaVersion,
   "com.typesafe.akka" %% "akka-testkit" % akkaVersion,
-  "org.scalatest" %% "scalatest" % "3.2.10"
+  "org.scalatest" %% "scalatest" % "3.2.10",
+  "org.typelevel" %% "cats-core" % catsVersion,
+  "org.typelevel" %% "cats-effect" % effectsVersion
 )
