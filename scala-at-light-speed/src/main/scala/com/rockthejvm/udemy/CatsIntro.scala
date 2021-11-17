@@ -76,6 +76,16 @@ object CatsIntro extends App {
   println(productWithApplicatives(List(1,2,3), List('a', 'b')))
 
 
+
+  val listOfOptions: List[Option[Int]] =  List(Some(1), Some(2))
+  import cats.Traverse
+  val listTraverse = Traverse[List]
+  val optionListInt:Option[List[Int]] = listTraverse.traverse(List(1,2,3))(x => Option(x))
+  import cats.syntax.traverse._
+  val optionList_v2:Option[List[Int]] = List(1,2,3).traverse(Option(_))
+
+  println(optionList_v2)
+
   def fib(n: Int, a: Long = 0, b: Long = 1): IO[Long] =
     IO(a + b).flatMap { b2 =>
       if (n > 0)
