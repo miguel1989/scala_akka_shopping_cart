@@ -17,7 +17,12 @@ libraryDependencies ++= Seq(
 ).map(_ % circeVersion)
 
 libraryDependencies ++= Seq(
+//  "org.iq80.leveldb" % "leveldb" % "0.12",
+//  "org.fusesource.leveldbjni" % "leveldbjni" % "1.8",
+
   "com.typesafe.akka" %% "akka-actor" % akkaVersion,
+  "com.typesafe.akka" %% "akka-persistence-typed" % akkaVersion,
+  "com.typesafe.akka" %% "akka-stream" % akkaVersion,
   "com.typesafe.akka" %% "akka-testkit" % akkaVersion,
   "org.scalatest" %% "scalatest" % "3.2.10",
   "org.typelevel" %% "cats-core" % catsVersion,
