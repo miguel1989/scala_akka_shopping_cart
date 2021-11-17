@@ -15,10 +15,11 @@ object PersistentActors extends App {
   case class TaxRecord(taxId: String, recordId: Int, date: Date, amount: Int)
 
   object Accountant {
-    def props(taxId: String, taxAuthRef: ActorRef) = Props(new Accountant(taxId, taxAuthRef))
+    def props(taxId: String, taxAuthRef: ActorRef): Props = Props(new Accountant(taxId, taxAuthRef))
   }
   class Accountant(taxId: String, taxAuthRef: ActorRef) extends PersistentActor with ActorLogging {
     var latestInvoiceId = 0
+    var latestTaxRecordId = 0
     var totalAmount = 0
 
     override def receiveRecover: Receive = {
@@ -30,7 +31,12 @@ object PersistentActors extends App {
     override def receiveCommand: Receive = {
       case Invoice(recipient, date, amount) =>
         log.info("received invoice for amount {}", amount)
+        persist(TaxRecord(taxId, latestTaxRecordId, date, amount / 3)) { ev =>
+          taxAuthRef ! ev
+          latestTaxRecordId += 1
+        }
         persist(InvoiceRecorder(latestInvoiceId, recipient, date, amount)) { ev =>
+          taxAuthRef ! ev
           latestInvoiceId += 1
           totalAmount += amount
           log.info("persisted {} with amount {}", ev.id, ev.amount)
