@@ -90,13 +90,19 @@ object IOIntroduction {
 
   def sumIO(n:Int): IO[Int] =
     if (n <= 0) IO(0)
-    else sumIO(n -1).map(res => res + n)
+    else for {
+      lastNum <- IO(n)
+      prevSum <- sumIO(n - 1)
+    } yield lastNum + prevSum
 
 
   //7 write fibbonacchi
   def fibo(n:Int): IO[BigInt] = {
-    if (n < 2) IO.Pure(1)
-    else IO.pure(1)
+    if (n < 2) IO(1)
+    else for {
+      last <- IO(fibo(n - 1)).flatten //the same as flatmap(x => x)
+      prev <- IO.defer(fibo(n - 2))
+    } yield last + prev
   }
 
   def main(args:Array[String]): Unit = {
@@ -110,6 +116,7 @@ object IOIntroduction {
     println(seqAndTakeFirst(delayedIO, delayedIO2).unsafeRunSync())
 //    forever2(delayedIO).unsafeRunSync()
 
-    println(sumIO(5).unsafeRunSync())
+    println(sumIO(20000).unsafeRunSync())
+    println(fibo(100).unsafeRunSync())
   }
 }
