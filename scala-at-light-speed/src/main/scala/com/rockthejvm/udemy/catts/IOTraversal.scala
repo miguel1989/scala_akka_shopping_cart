@@ -34,7 +34,7 @@ object IOTraversal extends IOApp.Simple {
   }.debugCustom
 
   val ios: List[IO[Int]] = workLoad.map(computeAsIO)
-  val singleIo: IO[List[Int]] = listTraverse.traverse(workLoad)(computeAsIO)
+  val singleIO: IO[List[Int]] = listTraverse.traverse(workLoad)(computeAsIO)
 
   import cats.syntax.parallel._
   val parallelSingleIo: IO[List[Int]] = workLoad.parTraverse(computeAsIO)
@@ -45,11 +45,16 @@ object IOTraversal extends IOApp.Simple {
   def sequence[M[_]: Traverse, A](listOfIOs: M[IO[A]]): IO[M[A]] =
     Traverse[M].traverse(listOfIOs)(x => x)
 
-  def parSequence[M[_]: Traverse, A](listOfIOs: M[IO[A]]): IO[M[A]] =
-    listOfIOs.parTraverse(x => x)
+  def parSequence[M[_]: Traverse, A](wrapperOfIOs: M[IO[A]]): IO[M[A]] =
+    wrapperOfIOs.parTraverse(x => x)
 
   override def run: IO[Unit] = {
     sequence(ios).map(_.sum).debugCustom.void
+    listTraverse.sequence(ios).map(_.sum).debugCustom.void
+
+    parSequence(ios).map(_.sum).debugCustom.void
+    ios.parSequence.map(_.sum).debugCustom.void
+
     //parallelSingleIo.map(_.sum).debugCustom.void
   }
   //    singleIo.void
