@@ -40,7 +40,7 @@ object IOIntroduction {
   def seqAndTakeLast_v3[A,B](ioa: IO[A], iob: IO[B]): IO[B] =
     ioa *> iob //andThen operator
   def seqAndTakeLast_v4[A,B](ioa: IO[A], iob: IO[B]): IO[B] =
-    ioa >> iob //andThen wtih by-name call
+    ioa >> iob //andThen with by-name call
 
   def seqAndTakeFirst[A,B](ioa: IO[A], iob: IO[B]): IO[A] = for {
     ioaRes <- ioa
