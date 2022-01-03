@@ -1,5 +1,6 @@
 package com.rockthejvm.udemy.catts.part2
 
+import cats.effect.kernel.Outcome.{Canceled, Errored, Succeeded}
 import cats.effect.{IO, IOApp, Resource}
 import com.rockthejvm.udemy.catts.DebugWrapper
 
@@ -59,5 +60,19 @@ object Resources extends IOApp.Simple {
     _ <- IO.sleep(1.second) >> fib.cancel
   } yield ()
 
-  override def run: IO[Unit] = correctAsyncFetchUrl.void
+
+  //nested or chained resources
+  def connFromConfResource(path: String) = for {
+    scanner <- Resource.make(openFileScanner(path))(scanner => IO(scanner.close()))
+    conn <- Resource.make(IO(new Connection(scanner.nextLine())))(conn => conn.close().void)
+  } yield conn
+
+  val IOWithFinalizer: IO[String] = IO("medved").debugCustom.guarantee(IO("finalizer").debugCustom.void)
+  val IOWithFinalizer_v2: IO[String] = IO("medved2").debugCustom.guaranteeCase {
+    case Succeeded(fa) => fa.flatMap(res => IO(s"releaseing res: ${res}").debugCustom).void
+    case Errored(e) => IO(s"error ${e}").debugCustom.void
+    case Canceled() => IO("canceled").debugCustom.void
+  }
+
+  override def run: IO[Unit] = IOWithFinalizer.void
 }
